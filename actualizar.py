@@ -266,12 +266,17 @@ def ncdf(z):
 def magnitud(f, futbol):
     return abs(f.get("dc",0)) + abs(f.get("df",0)) if futbol else abs(f.get("d",0))
 
-def escala_reportero(factores, futbol):
+# Piso del tope: si los factores de datos se cancelan entre sí, el ojo reportero
+# no debe quedar en cero. Se mide contra este mínimo por deporte.
+PISO_TOPE = {"futbol": 0.30, "NBA": 3.0, "NFL": 3.0, "MLB": 0.60}
+
+def escala_reportero(factores, futbol, piso=0.30):
     D = sum(magnitud(f, futbol) for f in factores if not f.get("rep"))
     H = sum(magnitud(f, futbol) for f in factores if f.get("rep"))
-    maxH = TOPE_REPORTERO / (1 - TOPE_REPORTERO) * D
+    base = max(D, piso)
+    maxH = TOPE_REPORTERO / (1 - TOPE_REPORTERO) * base
     k = maxH / H if (H > maxH and H > 0) else 1.0
-    total = D + H * k
+    total = base + H * k
     return k, ((H * k) / total if total else 0.0), (k < 0.999)
 
 def resolver(base, factores, futbol, sd=None, k=1.0):
@@ -357,11 +362,16 @@ def factores_futbol(cache, eq, nomC, nomF, kc, kf, fecha_utc):
             delta = recortar(0.17 * (dg5 - dgT), 0.20)
             g, emp, p, gf, ga = resumen_forma(js)
             pts = g*3 + emp
+            # el título tiene que decir lo mismo que el signo del factor
+            if delta > 0.015:   titulo = f"{nom} llega en alza respecto a su propio nivel"
+            elif delta < -0.015: titulo = f"{nom} llega a la baja respecto a su propio nivel"
+            else:               titulo = f"{nom} llega en su nivel habitual"
             F.append({
                 "c": "Forma",
-                "t": f"{nom} suma {pts} de {len(js)*3} puntos posibles en sus últimos {len(js)}",
-                "e": f"{g} ganados, {emp} empatados y {p} perdidos, con {gf} goles a favor y {ga} en contra. "
-                     f"Su promedio de la temporada es {dgT:+.2f} de diferencia por partido y en este tramo va {dg5:+.2f}.",
+                "t": titulo,
+                "e": f"Suma {pts} de {len(js)*3} puntos posibles en sus últimos {len(js)}: {g} ganados, "
+                     f"{emp} empatados y {p} perdidos, con {gf} goles a favor y {ga} en contra. "
+                     f"Eso da {dg5:+.2f} de diferencia por partido, contra {dgT:+.2f} de su promedio de temporada.",
                 "dc": delta*0.5 if es_casa else -delta*0.5,
                 "df": -delta*0.5 if es_casa else delta*0.5,
             })
@@ -372,11 +382,15 @@ def factores_futbol(cache, eq, nomC, nomF, kc, kf, fecha_utc):
         tot_dg  = (C["gf"] - C["ga"]) / C["n"]
         delta = recortar(0.20 * (casa_dg - tot_dg), 0.18)
         gan = sum(1 for j in ultimos(C, 99, "casa") if j["gf"] > j["ga"])
+        if delta > 0.015:    titulo = f"{nomC} rinde mejor en casa: gana el {round(gan/C['nc']*100)}% ahí"
+        elif delta < -0.015: titulo = f"{nomC} no saca ventaja de jugar en casa"
+        else:                titulo = f"Jugar en casa casi no cambia a {nomC}"
         F.append({
             "c": "Localía",
-            "t": f"{nomC} gana el {round(gan/C['nc']*100)}% de sus partidos como local",
+            "t": titulo,
             "e": f"{gan} de {C['nc']} ganados en casa, con {C['gfc']/C['nc']:.1f} goles anotados "
-                 f"y {C['gac']/C['nc']:.1f} recibidos por partido.",
+                 f"y {C['gac']/C['nc']:.1f} recibidos por partido. Eso es {casa_dg:+.2f} de diferencia "
+                 f"como local contra {tot_dg:+.2f} de su promedio general.",
             "dc": delta*0.6, "df": -delta*0.4,
         })
 
@@ -386,11 +400,15 @@ def factores_futbol(cache, eq, nomC, nomF, kc, kf, fecha_utc):
         tot_dg = (Fu["gf"] - Fu["ga"]) / Fu["n"]
         delta = recortar(0.20 * (vis_dg - tot_dg), 0.18)
         gan = sum(1 for j in ultimos(Fu, 99, "fuera") if j["gf"] > j["ga"])
+        if delta > 0.015:    titulo = f"{nomF} se crece de visita: gana el {round(gan/Fu['nf']*100)}% fuera"
+        elif delta < -0.015: titulo = f"{nomF} se cae cuando juega de visita"
+        else:                titulo = f"Jugar de visita casi no cambia a {nomF}"
         F.append({
             "c": "Localía",
-            "t": f"{nomF} gana el {round(gan/Fu['nf']*100)}% de sus partidos de visita",
+            "t": titulo,
             "e": f"{gan} de {Fu['nf']} ganados fuera, con {Fu['gff']/Fu['nf']:.1f} goles anotados "
-                 f"y {Fu['gaf']/Fu['nf']:.1f} recibidos por partido.",
+                 f"y {Fu['gaf']/Fu['nf']:.1f} recibidos por partido. Eso es {vis_dg:+.2f} de diferencia "
+                 f"como visitante contra {tot_dg:+.2f} de su promedio general.",
             "dc": -delta*0.4, "df": delta*0.6,
         })
 
@@ -450,11 +468,14 @@ def factores_margen(cache, eq, nomC, nomF, kc, kf, fecha_utc, liga_nom):
             tope = 3.0 if liga_nom != "MLB" else 0.8
             delta = recortar(0.45 * (m5 - mT), tope)
             g = sum(1 for j in js if j["gf"] > j["ga"])
+            if delta > 0.05:    titulo = f"{nom} llega en alza respecto a su propio nivel"
+            elif delta < -0.05: titulo = f"{nom} llega a la baja respecto a su propio nivel"
+            else:               titulo = f"{nom} llega en su nivel habitual"
             F.append({
                 "c": "Forma",
-                "t": f"{nom} ganó {g} de sus últimos {len(js)}",
-                "e": f"Diferencia de {m5:+.1f} {uni} por juego en ese tramo, contra {mT:+.1f} "
-                     f"de su promedio de temporada.",
+                "t": titulo,
+                "e": f"Ganó {g} de sus últimos {len(js)}, con {m5:+.1f} {uni} de diferencia por juego "
+                     f"en ese tramo, contra {mT:+.1f} de su promedio de temporada.",
                 "d": delta if es_casa else -delta, "dt": 0.0,
             })
 
@@ -462,20 +483,28 @@ def factores_margen(cache, eq, nomC, nomF, kc, kf, fecha_utc, liga_nom):
         dif = (C["gfc"]-C["gac"])/C["nc"] - (C["gf"]-C["ga"])/C["n"]
         delta = recortar(0.5 * dif, 3.0 if liga_nom != "MLB" else 0.7)
         gan = sum(1 for j in ultimos(C, 99, "casa") if j["gf"] > j["ga"])
+        if delta > 0.05:    titulo = f"{nomC} rinde mejor en casa: gana el {round(gan/C['nc']*100)}% ahí"
+        elif delta < -0.05: titulo = f"{nomC} no saca ventaja de jugar en casa"
+        else:               titulo = f"Jugar en casa casi no cambia a {nomC}"
         F.append({
             "c": "Localía",
-            "t": f"{nomC} gana el {round(gan/C['nc']*100)}% de sus juegos en casa",
-            "e": f"{gan} de {C['nc']} como local, con {(C['gfc']-C['gac'])/C['nc']:+.1f} {uni} de diferencia por juego.",
+            "t": titulo,
+            "e": f"{gan} de {C['nc']} como local, con {(C['gfc']-C['gac'])/C['nc']:+.1f} {uni} de diferencia "
+                 f"por juego, contra {(C['gf']-C['ga'])/C['n']:+.1f} de su promedio general.",
             "d": delta, "dt": 0.0,
         })
     if Fu["nf"] >= 4:
         dif = (Fu["gff"]-Fu["gaf"])/Fu["nf"] - (Fu["gf"]-Fu["ga"])/Fu["n"]
         delta = recortar(0.5 * dif, 3.0 if liga_nom != "MLB" else 0.7)
         gan = sum(1 for j in ultimos(Fu, 99, "fuera") if j["gf"] > j["ga"])
+        if delta > 0.05:    titulo = f"{nomF} se crece de visita: gana el {round(gan/Fu['nf']*100)}% fuera"
+        elif delta < -0.05: titulo = f"{nomF} se cae cuando juega de visita"
+        else:               titulo = f"Jugar de visita casi no cambia a {nomF}"
         F.append({
             "c": "Localía",
-            "t": f"{nomF} gana el {round(gan/Fu['nf']*100)}% de sus juegos de visita",
-            "e": f"{gan} de {Fu['nf']} fuera de casa, con {(Fu['gff']-Fu['gaf'])/Fu['nf']:+.1f} {uni} de diferencia por juego.",
+            "t": titulo,
+            "e": f"{gan} de {Fu['nf']} fuera de casa, con {(Fu['gff']-Fu['gaf'])/Fu['nf']:+.1f} {uni} de diferencia "
+                 f"por juego, contra {(Fu['gf']-Fu['ga'])/Fu['n']:+.1f} de su promedio general.",
             "d": -delta, "dt": 0.0,
         })
 
@@ -596,14 +625,15 @@ def pronosticar(cache, eq, por_liga, equipos, partido, notas, hoy):
     reporteros = notas_reportero(notas, equipos, kc, kf, futbol, liga_nom, hoy)
     factores += reporteros
 
-    k, share, topado = escala_reportero(factores, futbol)
+    piso = PISO_TOPE["futbol"] if futbol else PISO_TOPE[liga_nom]
+    k, share, topado = escala_reportero(factores, futbol, piso)
     r = resolver(base, factores, futbol, sd, k)
 
     # --- efecto de cada factor, en puntos de probabilidad del local ---
     lista = []
     for i, f in enumerate(factores):
         sin_este = factores[:i] + factores[i+1:]
-        k2, _, _ = escala_reportero(sin_este, futbol)
+        k2, _, _ = escala_reportero(sin_este, futbol, piso)
         r2 = resolver(base, sin_este, futbol, sd, k2)
         pts = (r["pC"] - r2["pC"]) * 100
         m = k if f.get("rep") else 1.0
@@ -902,9 +932,23 @@ def main():
         log("consultando ESPN…")
         recolectar(cache, equipos)
 
+    # Hay partidos que quedan marcados como "por jugar" para siempre: suspendidos,
+    # pospuestos o que nunca cerraron en la fuente. Se descartan por fecha.
+    ahora = datetime.now(timezone.utc)
+    limite = ahora + timedelta(days=DIAS_ADELANTE + 1)
+    def vigente(p):
+        try:
+            f = datetime.fromisoformat((p.get("fecha") or "").replace("Z", "+00:00"))
+        except Exception:
+            return False
+        return (ahora - timedelta(hours=5)) <= f <= limite
+
     jug = len([p for p in cache.values() if p.get("fin")])
-    prox = [p for p in cache.values() if not p.get("fin")]
-    log(f"histórico: {jug} partidos jugados · próximos: {len(prox)}")
+    todos_prox = [p for p in cache.values() if not p.get("fin")]
+    prox = [p for p in todos_prox if vigente(p)]
+    descartados = len(todos_prox) - len(prox)
+    log(f"histórico: {jug} partidos jugados · próximos: {len(prox)}"
+        + (f" (se descartaron {descartados} vencidos o suspendidos)" if descartados else ""))
 
     eq, por_liga = construir_fuerzas(cache)
     hoy = datetime.now(timezone.utc).date()
