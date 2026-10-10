@@ -1,0 +1,35 @@
+name: Actualizar Las 3 Torres
+
+# Corre todos los días a las 06:47 del centro de México (12:47 UTC).
+# También puedes correrlo a mano desde la pestaña Actions, botón "Run workflow".
+on:
+  schedule:
+    - cron: "47 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Bajar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Correr el actualizador
+        run: python actualizar.py
+
+      - name: Guardar los cambios
+        run: |
+          git config user.name "Las 3 Torres"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Actualización $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git push
