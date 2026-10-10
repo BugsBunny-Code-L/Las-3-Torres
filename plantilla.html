@@ -1,0 +1,539 @@
+<title>Las 3 Torres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: una columna; buscador arriba, ficha en bandas separadas por filetes. Paleta vino sobre neutros cálidos. */
+:root{
+  --bg:#F5F1F1; --surface:#FCFAFA; --surface-2:#EDE6E7;
+  --ink:#1C1114; --ink-2:#5A4A4E; --ink-3:#8B797D;
+  --line:#DED3D5; --line-2:#C9BABD;
+  --vino:#7A1E35; --vino-2:#A33E58; --vino-3:#C9869A; --vino-soft:#F2E1E5;
+  --contra:#5D5F6B; --contra-soft:#E4E4E8;
+  --bar-track:#E2D9DA;
+  --f-display:"IBM Plex Sans Condensed","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#130C0E; --surface:#1B1215; --surface-2:#241A1D;
+    --ink:#F1E8EA; --ink-2:#B4A3A7; --ink-3:#7E6E72;
+    --line:#2E2125; --line-2:#3F2E33;
+    --vino:#C9566F; --vino-2:#A33E58; --vino-3:#7A1E35; --vino-soft:#2B141A;
+    --contra:#8A8D9C; --contra-soft:#23242B;
+    --bar-track:#271C20;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#130C0E; --surface:#1B1215; --surface-2:#241A1D;
+  --ink:#F1E8EA; --ink-2:#B4A3A7; --ink-3:#7E6E72;
+  --line:#2E2125; --line-2:#3F2E33;
+  --vino:#C9566F; --vino-2:#A33E58; --vino-3:#7A1E35; --vino-soft:#2B141A;
+  --contra:#8A8D9C; --contra-soft:#23242B;
+  --bar-track:#271C20;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding-inline:20px;padding-block:0 70px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* cabecera */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:880px;margin:0 auto;padding-inline:20px;padding-block:11px;display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:9px}
+.torres{display:flex;align-items:flex-end;gap:3px;height:19px}
+.torres i{display:block;width:4px;background:var(--vino);border-radius:1px 1px 0 0}
+.torres i:nth-child(1){height:12px}.torres i:nth-child(2){height:19px}.torres i:nth-child(3){height:15px}
+.mark b{font-family:var(--f-display);font-weight:700;font-size:19px;letter-spacing:.04em;text-transform:uppercase}
+.mark small{font-family:var(--f-mono);font-size:10px;font-weight:400;letter-spacing:.13em;color:var(--ink-3);text-transform:uppercase}
+.demo{margin-left:auto;font-family:var(--f-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--vino);border:1px solid currentColor;border-radius:2px;padding:3px 7px;white-space:nowrap}
+
+/* buscador */
+.search{padding-block:32px 0;position:relative}
+.search-label{font-family:var(--f-mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.search-field{display:flex;align-items:center;gap:12px;border:1px solid var(--line-2);background:var(--surface);border-radius:3px;padding:0 14px}
+.search-field:focus-within{border-color:var(--vino);box-shadow:0 0 0 3px var(--vino-soft)}
+.search-field .caret{font-family:var(--f-mono);color:var(--vino);font-size:16px}
+#q{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font-family:var(--f-body);font-size:18px;padding:15px 0;outline:none}
+#q::placeholder{color:var(--ink-3)}
+.clearbtn{border:0;background:transparent;color:var(--ink-3);font-family:var(--f-mono);font-size:12px;cursor:pointer;padding:6px}
+.clearbtn:hover{color:var(--ink)}
+.results{position:absolute;left:20px;right:20px;top:calc(100% - 2px);z-index:30;background:var(--surface);border:1px solid var(--line-2);border-top:0;border-radius:0 0 3px 3px;max-height:330px;overflow-y:auto;box-shadow:0 14px 30px rgba(30,10,16,.16)}
+.res{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);padding:11px 14px;cursor:pointer;font-family:var(--f-body);font-size:15px}
+.res:last-child{border-bottom:0}
+.res[aria-selected="true"],.res:hover{background:var(--vino-soft)}
+.res .tag{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;color:var(--ink-3);margin-left:auto;text-align:right;white-space:nowrap}
+.res .abbr{font-family:var(--f-mono);font-size:11px;font-weight:600;color:var(--vino);width:36px;flex:none}
+.no{padding:14px;color:var(--ink-3);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.chip{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line-2);background:transparent;color:var(--ink-2);border-radius:999px;padding:5px 11px;cursor:pointer}
+.chip:hover{border-color:var(--vino);color:var(--vino)}
+
+/* bandas */
+.band{border-top:1px solid var(--line);padding-block:28px}
+.band:first-of-type{border-top:0}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.h-team{font-family:var(--f-display);font-size:clamp(34px,8vw,54px);font-weight:700;line-height:1.02;letter-spacing:-.01em;margin-top:8px}
+.vs{margin-top:10px;font-size:16px;color:var(--ink-2)}
+.vs b{color:var(--ink);font-weight:600}
+.meta{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px 22px;font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.meta i{font-style:normal;color:var(--ink-3)}
+.sec-h{font-family:var(--f-mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+.lede{font-size:13.5px;color:var(--ink-2);max-width:66ch;margin:0 0 20px}
+
+/* probabilidad */
+.pbar{display:flex;height:44px;border-radius:3px;overflow:hidden;border:1px solid var(--line-2)}
+.pseg{display:flex;align-items:center;justify-content:center;font-family:var(--f-mono);font-size:13px;font-weight:600;min-width:0;transition:flex-grow .45s cubic-bezier(.2,.7,.3,1)}
+.pseg.s1{background:var(--vino);color:#FFF6F7}
+.pseg.sx{background:var(--surface-2);color:var(--ink-2)}
+.pseg.s2{background:var(--contra);color:#F7F7FA}
+.pkey{display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2);flex-wrap:wrap}
+.pkey i{font-style:normal;color:var(--ink-3)}
+
+.headline{display:flex;flex-wrap:wrap;gap:20px 36px;margin-top:26px;align-items:flex-start}
+.stat{min-width:0;max-width:260px}
+.stat .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.stat .v{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.1;margin-top:3px;font-variant-numeric:tabular-nums}
+.stat .v.sm{font-size:20px}
+.stat .g{font-size:12.5px;color:var(--ink-3);margin-top:5px;line-height:1.4}
+
+/* escala de confianza */
+.confwrap{margin-top:6px;max-width:330px}
+.confval{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.1}
+.confval span{color:var(--vino)}
+.scale{margin-top:10px}
+.scale-bar{display:flex;height:8px;border-radius:2px;overflow:hidden}
+.scale-bar b{display:block}
+.scale-bar b.b1{background:var(--vino-soft);flex:50}
+.scale-bar b.b2{background:var(--vino-3);flex:20}
+.scale-bar b.b3{background:var(--vino);flex:30}
+.scale-marks{position:relative;height:16px;margin-top:3px}
+.scale-marks u{position:absolute;transform:translateX(-50%);font-family:var(--f-mono);font-size:10px;color:var(--ink-3);text-decoration:none}
+.needle{position:relative;height:0}
+.needle i{position:absolute;top:-14px;transform:translateX(-50%);width:2px;height:14px;background:var(--ink);display:block}
+.needle i::after{content:"";position:absolute;top:-4px;left:-2px;width:6px;height:6px;border-radius:50%;background:var(--ink)}
+.scale-legend{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);margin-top:7px;line-height:1.7}
+
+.note{font-size:13.5px;color:var(--ink-2);margin-top:16px;max-width:66ch}
+.note b{color:var(--ink);font-weight:600}
+
+/* factores */
+.unitbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:12px 14px;margin-bottom:20px;font-size:13px;color:var(--ink-2)}
+.unitbar .kk{font-family:var(--f-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+.meter{flex:1;min-width:160px;display:flex;align-items:center;gap:10px}
+.meter-track{flex:1;min-width:0;height:9px;background:var(--bar-track);border-radius:2px;position:relative;overflow:hidden}
+.meter-fill{height:100%;background:var(--vino-2)}
+.meter-cap{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--ink-3)}
+.meter-val{font-family:var(--f-mono);font-size:12px;white-space:nowrap}
+
+.catrow{margin-bottom:24px}
+.cat{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--vino);margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.cat em{font-style:normal;font-size:10px;color:var(--ink-3);letter-spacing:.04em;text-transform:none}
+.fact{display:grid;grid-template-columns:1fr 168px;gap:6px 18px;padding:12px 0;border-top:1px solid var(--line)}
+.fact .t{font-size:14.5px;font-weight:500;min-width:0}
+.fact .e{grid-column:1;font-size:13px;color:var(--ink-2);min-width:0}
+.fact .imp{grid-column:2;grid-row:1 / span 2;align-self:center}
+.dbar{position:relative;height:9px;background:var(--bar-track);border-radius:2px}
+.dbar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line-2)}
+.dfill{position:absolute;top:0;height:9px;border-radius:2px}
+.dfill.p{background:var(--vino);left:50%}
+.dfill.n{background:var(--contra);right:50%}
+.dval{font-family:var(--f-mono);font-size:12px;margin-top:6px;text-align:right;font-weight:500}
+.dval.p{color:var(--vino)} .dval.n{color:var(--contra)}
+.dsub{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);text-align:right;margin-top:2px}
+.flagrep{display:inline-block;font-family:var(--f-mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--vino);border:1px solid var(--vino-3);border-radius:2px;padding:1px 5px;margin-left:7px;vertical-align:1px}
+@media (max-width:580px){
+  .fact{grid-template-columns:1fr}
+  .fact .imp{grid-column:1;grid-row:auto;margin-top:8px}
+  .dval,.dsub{text-align:left}
+}
+
+/* formulario ojo reportero */
+.repform{background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:15px;margin-top:4px}
+.repform .row{display:flex;flex-wrap:wrap;gap:10px}
+.repform label{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);display:block;margin-bottom:4px}
+.repform input[type=text],.repform select{width:100%;border:1px solid var(--line-2);background:var(--bg);color:var(--ink);border-radius:2px;padding:9px 10px;font-family:var(--f-body);font-size:14px}
+.repform .f-grow{flex:1 1 220px;min-width:0}
+.repform .f-sm{flex:0 1 150px;min-width:0}
+.btn{font-family:var(--f-mono);font-size:12px;letter-spacing:.05em;border:1px solid var(--vino);background:var(--vino);color:#FFF6F7;border-radius:2px;padding:10px 16px;cursor:pointer}
+.btn:hover{background:var(--vino-2);border-color:var(--vino-2)}
+.btn.ghost{background:transparent;color:var(--vino)}
+.btn.ghost:hover{background:var(--vino-soft)}
+.btn.x{border:0;background:transparent;color:var(--ink-3);padding:2px 6px;font-size:14px;cursor:pointer}
+.btn.x:hover{color:var(--vino)}
+
+ul.plain{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:11px}
+ul.plain li{position:relative;padding-left:20px;font-size:14px;color:var(--ink-2);max-width:68ch}
+ul.plain li::before{content:"—";position:absolute;left:0;color:var(--ink-3);font-family:var(--f-mono)}
+
+/* tablas */
+.scroller{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:13.5px;min-width:360px}
+table.t th{text-align:left;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:400;padding:0 12px 8px 0;white-space:nowrap}
+table.t td{padding:9px 12px 9px 0;border-top:1px solid var(--line);vertical-align:top}
+table.t td.num,table.t th.num{text-align:right;padding-right:0;font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.dot.ok{background:var(--vino)} .dot.old{background:var(--vino-3)} .dot.no{background:var(--contra)}
+.ok-mark{color:var(--vino);font-weight:600} .no-mark{color:var(--contra)}
+
+/* cálculo desplegable */
+details.calc{border:1px solid var(--line);border-radius:3px;background:var(--surface);margin-top:18px}
+details.calc summary{cursor:pointer;padding:13px 16px;font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;color:var(--vino);list-style:none}
+details.calc summary::-webkit-details-marker{display:none}
+details.calc summary::before{content:"▸ "}
+details.calc[open] summary::before{content:"▾ "}
+.calcbody{padding:0 16px 16px;font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);overflow-x:auto}
+.calcbody table{border-collapse:collapse;width:100%;min-width:300px}
+.calcbody td{padding:4px 10px 4px 0;vertical-align:top;white-space:nowrap}
+.calcbody td:last-child{text-align:right;color:var(--ink);white-space:nowrap}
+.calcbody .rule td{border-top:1px solid var(--line);padding-top:7px}
+.calcbody p{margin:13px 0 0;white-space:normal;font-family:var(--f-body);font-size:13px;line-height:1.55}
+
+/* calificación */
+.kpis{display:flex;flex-wrap:wrap;gap:18px 34px;margin-bottom:24px}
+.kpi .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .g{font-size:12.5px;color:var(--ink-3);margin-top:3px;max-width:30ch}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--f-mono);font-size:11px;color:var(--ink-2);margin-bottom:12px}
+.legend s{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.swatch{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+footer{border-top:1px solid var(--line);margin-top:46px;padding-top:22px;font-size:13px;color:var(--ink-3);max-width:68ch}
+footer p{margin:0 0 11px}
+footer strong{color:var(--ink-2);font-weight:600}
+a{color:var(--vino)}
+:focus-visible{outline:2px solid var(--vino);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="mark">
+      <span class="torres" aria-hidden="true"><i></i><i></i><i></i></span>
+      <b>Las 3 Torres</b>
+      <small>pronóstico deportivo</small>
+    </div>
+    <div class="demo" id="sello">actualizado a diario</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="search">
+    <div class="search-label">Buscar equipo</div>
+    <div class="search-field">
+      <span class="caret mono" aria-hidden="true">›</span>
+      <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="América, Arsenal, Lakers, Chiefs, Dodgers…" aria-label="Buscar equipo" aria-expanded="false" role="combobox" aria-controls="results">
+      <button class="clearbtn" id="clear" type="button" hidden>limpiar</button>
+    </div>
+    <div class="results" id="results" role="listbox" hidden></div>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <main id="dossier" aria-live="polite"></main>
+  <section id="record"></section>
+
+  <footer>
+    <p><strong>Cómo calcula.</strong> En fútbol, el modelo estima cuántos goles espera de cada equipo y calcula la probabilidad de cada marcador posible con una distribución de Poisson. En NBA, NFL y MLB estima por cuánto espera que gane el local y lo compara con lo que históricamente se desvía cada deporte.</p>
+    <p><strong>No es una bola de cristal.</strong> Un pronóstico de 70% significa que, de cada diez partidos así, se esperan siete aciertos y tres fallos. Los tres fallos no son errores del modelo: son parte del pronóstico.</p>
+    <p><strong>Fuentes.</strong> Calendario, resultados y estadísticas del punto de acceso público de ESPN. Las notas de ojo reportero son de elaboración propia y no están verificadas por una fuente de datos.</p>
+  </footer>
+</div>
+
+<script>
+/* Las 3 Torres — dibuja la página con los datos que dejó actualizar.py */
+const DATOS = /*__DATOS__*/ null;
+
+const esc=(s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pct=(x)=>Math.round(x*100);
+const T=DATOS.equipos, P=DATOS.partidos, H=DATOS.historial;
+const KEYS=Object.keys(T);
+const fixtureFor=(k)=>P.find(p=>p.local===k||p.visita===k);
+let current=null;
+
+function render(key){
+  const fx=fixtureFor(key);
+  if(!fx){
+    document.getElementById("dossier").innerHTML=`
+      <section class="band">
+        <h1 class="h-team">${esc(T[key].n)}</h1>
+        <p class="note">No hay partido programado para este equipo en la ventana que trae el actualizador. Vuelve a revisar después de la próxima corrida, o amplía los días de búsqueda en el programa.</p>
+      </section>`;
+    return;
+  }
+  current=key;
+  const me=T[key], esLocal=fx.local===key, rival=T[esLocal?fx.visita:fx.local];
+  const pMe=esLocal?fx.pL:fx.pV, pRival=esLocal?fx.pV:fx.pL, pE=fx.pE||0;
+  const futbol=fx.futbol;
+  const signo=esLocal?1:-1;
+
+  const segs=[`<div class="pseg s1" style="flex-grow:${pMe}">${pct(pMe)}%</div>`];
+  if(futbol) segs.push(`<div class="pseg sx" style="flex-grow:${pE}">${pct(pE)}%</div>`);
+  segs.push(`<div class="pseg s2" style="flex-grow:${pRival}">${pct(pRival)}%</div>`);
+
+  const marcador=esLocal?fx.marcador:fx.marcador.split("–").reverse().join("–");
+  const espMe=futbol?(esLocal?fx.xgL:fx.xgV):0, espRiv=futbol?(esLocal?fx.xgV:fx.xgL):0;
+
+  const maxPts=Math.max(...fx.factores.map(f=>Math.abs(f.pts)),0.5);
+  const cats=[...new Set(fx.factores.map(f=>f.c))];
+  const factHtml=cats.map(c=>{
+    const filas=fx.factores.filter(f=>f.c===c).map(f=>{
+      const v=f.pts*signo, raw=f.val*signo;
+      const w=Math.min(50,Math.abs(v)/maxPts*50), cls=v>=0?"p":"n";
+      const txt=Math.abs(v)<0.05?"neutro":`${v>0?"+":"−"}${Math.abs(v).toFixed(1)} pts`;
+      const crudo=`${raw>=0?"+":"−"}${Math.abs(raw).toFixed(f.dec)} ${esc(f.unidad)}`;
+      return `<div class="fact">
+        <div class="t">${esc(f.t)}${f.rep?'<span class="flagrep">reportero</span>':""}</div>
+        <div class="imp">
+          <div class="dbar"><div class="dfill ${cls}" style="width:${w}%"></div></div>
+          <div class="dval ${cls}">${txt}</div>
+          <div class="dsub">${crudo}</div>
+        </div>
+        <div class="e">${esc(f.e)}</div>
+      </div>`;
+    }).join("");
+    const nota=c==="Ojo reportero"?'<em>lo que no está en ninguna base de datos</em>':"";
+    return `<div class="catrow"><div class="cat">${esc(c)} ${nota}</div>${filas}</div>`;
+  }).join("");
+
+  const trazaFilas=fx.traza.map(r=>`<tr${r[2]?' class="rule"':""}><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join("");
+  const srcRows=fx.fuentes.map(s=>`<tr><td><span class="dot ${s.st}"></span>${esc(s.k)}</td><td>${esc(s.v)}</td><td class="num">${esc(s.t)}</td></tr>`).join("");
+
+  document.getElementById("dossier").innerHTML=`
+  <section class="band">
+    <div class="eyebrow">${esc(fx.comp)}</div>
+    <h1 class="h-team">${esc(me.n)}</h1>
+    <div class="vs">${esLocal?"Recibe a":"Visita a"} <b>${esc(rival.n)}</b></div>
+    <div class="meta">
+      <span><i>Cuándo</i> ${esc(fx.dt)} (hora del centro de México)</span>
+      ${fx.venue?`<span><i>Dónde</i> ${esc(fx.venue)}</span>`:""}
+      <span><i>Condición</i> ${esLocal?"Local":"Visitante"}</span>
+    </div>
+  </section>
+
+  <section class="band">
+    <h2 class="sec-h">Pronóstico</h2>
+    <p class="lede">Probabilidad de cada resultado para este partido.</p>
+    <div class="pbar">${segs.join("")}</div>
+    <div class="pkey">
+      <span><i>${esc(me.s)}</i> gana ${esc(me.n)}</span>
+      ${futbol?`<span><i>X</i> empate</span>`:``}
+      <span><i>${esc(rival.s)}</i> gana ${esc(rival.n)}</span>
+    </div>
+
+    <div class="headline">
+      <div class="stat">
+        <div class="k">Marcador proyectado</div>
+        <div class="v">${esc(marcador)}</div>
+        <div class="g">El resultado exacto más probable${futbol&&fx.marcadorP?`, con ${pct(fx.marcadorP)}% de ocurrir`:""}.</div>
+      </div>
+      <div class="stat">
+        <div class="k">${futbol?"Goles esperados":"Total esperado"}</div>
+        <div class="v sm">${futbol?`${espMe.toFixed(2)} — ${espRiv.toFixed(2)}`:`${fx.total.toFixed(1)} ${esc(fx.unidadTotal)}`}</div>
+        <div class="g">${futbol?`Goles que el modelo espera de cada equipo en promedio, ${esc(me.s)} primero. No es el marcador, es el promedio.`:`Suma de ${esc(fx.unidadTotal)} de los dos equipos que el modelo espera.`}</div>
+      </div>
+      <div class="stat">
+        <div class="k">Confianza del modelo</div>
+        <div class="confwrap">
+          <div class="confval"><span>${esc(fx.confEtiqueta)}</span> · ${fx.conf}%</div>
+          <div class="scale">
+            <div class="needle"><i style="left:${fx.conf}%"></i></div>
+            <div class="scale-bar"><b class="b1"></b><b class="b2"></b><b class="b3"></b></div>
+            <div class="scale-marks"><u style="left:25%">Baja</u><u style="left:60%">Media</u><u style="left:85%">Alta</u></div>
+            <div class="scale-legend">Baja: 0 a 49% &nbsp;·&nbsp; Media: 50 a 69% &nbsp;·&nbsp; Alta: 70 a 100%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">${futbol
+      ? `El modelo le da a ${esc(me.n)} <b>${pct(pMe)}%</b> de ganar, <b>${pct(pE)}%</b> de empatar y <b>${pct(pRival)}%</b> de perder.`
+      : `El modelo le da a ${esc(me.n)} <b>${pct(pMe)}%</b> de ganar y <b>${pct(pRival)}%</b> de perder.`}
+      La confianza de <b>${esc(fx.confEtiqueta.toLowerCase())} (${fx.conf}%)</b> no mide qué tan seguro es el resultado, sino qué tan sólido es el pronóstico: combina cuántos datos del partido están verificados (${pct(fx.cobertura)}%) con qué tan separados están los dos equipos (${pct(fx.separacion)}%).</p>
+
+    <details class="calc"><summary>Ver cómo se llega a estos números</summary>
+      <div class="calcbody">
+        <table>${trazaFilas}</table>
+        <p>${esc(fx.trazaNota)}</p>
+        <p style="margin-top:18px"><b>Y así sale la confianza:</b></p>
+        <table>
+          <tr><td>Cobertura de datos verificados</td><td>${pct(fx.cobertura)}%</td></tr>
+          <tr><td>Separación entre los dos equipos</td><td>${pct(fx.separacion)}%</td></tr>
+          <tr class="rule"><td>Confianza = cobertura×55 + separación×45</td><td>${fx.conf}%</td></tr>
+        </table>
+        <p>La cobertura baja cuando falta información, por ejemplo cuando un equipo lleva pocos partidos jugados o no hay historial directo. La separación es cero cuando los dos equipos están parejos y sube cuando uno es claro favorito.</p>
+      </div>
+    </details>
+  </section>
+
+  <section class="band">
+    <h2 class="sec-h">Qué mueve el pronóstico</h2>
+    <p class="lede">Cada factor mueve la probabilidad de ${esc(me.n)} hacia arriba o hacia abajo. <b>El número grande son puntos porcentuales</b>: si dice +3.1 pts, quitar ese factor dejaría a ${esc(me.s)} 3.1 puntos de probabilidad más abajo. El número chico de abajo es el mismo efecto medido en ${esc(fx.unidad)}.</p>
+
+    <div class="unitbar">
+      <span class="kk">Peso del ojo reportero</span>
+      <span class="meter">
+        <span class="meter-track">
+          <span class="meter-fill" style="width:${Math.min(100,fx.repShare*100).toFixed(1)}%"></span>
+          <span class="meter-cap" style="left:${DATOS.tope*100}%"></span>
+        </span>
+        <span class="meter-val">${pct(fx.repShare)}% de ${pct(DATOS.tope)}% permitido</span>
+      </span>
+      <span style="flex-basis:100%;font-size:12.5px;color:var(--ink-3)">${fx.repTopado
+        ? `Las notas de reportero pedían más peso del permitido, así que se redujeron al ${pct(DATOS.tope)}%. El dato duro siempre manda.`
+        : (fx.repShare>0
+            ? `Los datos duros aportan el ${pct(1-fx.repShare)}% del ajuste. El tope existe para que una nota nunca domine un pronóstico.`
+            : `No hay notas de reportero cargadas para este partido. Se agregan en el archivo ojo-reportero.json.`)}</span>
+    </div>
+
+    ${factHtml}
+  </section>
+
+  <section class="band">
+    <h2 class="sec-h">Lo que el modelo no sabe</h2>
+    <ul class="plain">${fx.incognitas.map(u=>`<li>${esc(u)}</li>`).join("")}</ul>
+  </section>
+
+  <section class="band">
+    <h2 class="sec-h">Datos y actualización</h2>
+    <div class="scroller"><table class="t">
+      <thead><tr><th>Bloque de datos</th><th>De dónde sale</th><th class="num">Estado</th></tr></thead>
+      <tbody>${srcRows}</tbody>
+    </table></div>
+    <p class="note">Vino sólido: dato medido. Vino claro: dato parcial o con pocos partidos de muestra. Gris: no hay dato y el modelo trabaja con un supuesto.</p>
+  </section>`;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------------- calificación ---------------- */
+function renderRecord(){
+  const cont=document.getElementById("record");
+  if(!H || !H.total){
+    cont.innerHTML=`<section class="band">
+      <h2 class="sec-h">Cómo va el modelo</h2>
+      <p class="lede">Todavía no hay pronósticos cerrados. Cada vez que corre el actualizador, guarda los pronósticos del día; al día siguiente busca cómo terminaron esos partidos y los califica. En una o dos semanas esta sección empieza a tener algo que decir.</p>
+    </section>${bloqueActualiza()}`;
+    return;
+  }
+  const W=620,hgt=210,padL=46,padB=44,padT=14,padR=10;
+  const iw=W-padL-padR, ih=hgt-padT-padB;
+  const n=Math.max(H.bandas.length,1), gw=iw/n, bw=Math.min(26,gw/2.6);
+  let bars="",axis="",grid="";
+  H.bandas.forEach((b,i)=>{
+    const cx=padL+gw*i+gw/2;
+    const hp=(b.mid/100)*ih, hr=b.real*ih;
+    bars+=`<rect x="${(cx-bw-3).toFixed(1)}" y="${(padT+ih-hp).toFixed(1)}" width="${bw}" height="${Math.max(0,hp).toFixed(1)}" fill="var(--vino)" rx="2"></rect>`;
+    bars+=`<rect x="${(cx+3).toFixed(1)}" y="${(padT+ih-hr).toFixed(1)}" width="${bw}" height="${Math.max(0,hr).toFixed(1)}" fill="var(--contra)" rx="2"></rect>`;
+    axis+=`<text x="${cx.toFixed(1)}" y="${hgt-26}" text-anchor="middle" font-size="11" fill="var(--ink-2)" font-family="IBM Plex Mono, monospace">${esc(b.b)}</text>`;
+    axis+=`<text x="${cx.toFixed(1)}" y="${hgt-11}" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace">${b.n} casos</text>`;
+  });
+  [0,25,50,75,100].forEach(v=>{
+    const y=padT+ih-(v/100)*ih;
+    grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"></line>`;
+    grid+=`<text x="${padL-8}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="IBM Plex Mono, monospace">${v}%</text>`;
+  });
+  const ligas=H.ligas.map(x=>`<tr><td>${esc(x.l)}</td><td class="num">${x.n}</td><td class="num">${pct(x.a)}%</td></tr>`).join("");
+  const cats=H.cats.map(x=>`<tr><td>${esc(x.c)}</td><td class="num">${x.n}</td><td class="num" style="color:${x.v>=0?'var(--vino)':'var(--contra)'}">${x.v>=0?"+":"−"}${Math.abs(x.v).toFixed(1)} pts</td></tr>`).join("");
+  const ult=H.ultimos.map(x=>`<tr><td>${esc(x.p)}</td><td>${esc(x.d)}</td><td>${esc(x.r)}</td><td class="num ${x.ok?"ok-mark":"no-mark"}">${x.ok?"acertó":"falló"}</td></tr>`).join("");
+
+  cont.innerHTML=`
+  <section class="band">
+    <h2 class="sec-h">Cómo va el modelo</h2>
+    <p class="lede">Cada pronóstico se guarda y se compara con el resultado real. Es la única forma honesta de saber si el sistema sirve, y es lo que con el tiempo dice qué factores pesar más. Datos desde el ${esc(H.desde)}.</p>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Pronósticos evaluados</div><div class="v">${H.total}</div><div class="g">Partidos ya jugados con pronóstico guardado.</div></div>
+      <div class="kpi"><div class="k">Acertó el favorito</div><div class="v">${pct(H.acierto)}%</div><div class="g">Veces que ganó el resultado al que el modelo le dio más probabilidad.</div></div>
+      <div class="kpi"><div class="k">Error promedio</div><div class="v">${H.brier.toFixed(3)}</div><div class="g">Qué tan lejos quedaron los porcentajes de la realidad. Cero es perfecto. Adivinar al azar daría cerca de 0.25 sin empates y 0.33 en fútbol.</div></div>
+    </div>
+
+    ${H.bandas.length?`
+    <h3 class="sec-h" style="margin-top:4px">¿Cuando dice 70%, gana el 70% de las veces?</h3>
+    <p class="lede">Esto es lo más importante de la página. Si el modelo dice 70% y esos partidos se ganan el 70% de las veces, los porcentajes significan algo. Si dice 70% y solo se gana el 50%, está inflado y hay que corregirlo.</p>
+    <div class="legend">
+      <s><span class="swatch" style="background:var(--vino)"></span> Lo que el modelo prometió</s>
+      <s><span class="swatch" style="background:var(--contra)"></span> Lo que realmente pasó</s>
+    </div>
+    <div class="scroller">
+      <svg viewBox="0 0 ${W} ${hgt}" width="100%" style="max-width:100%;height:auto;min-width:420px" role="img" aria-label="Probabilidad prometida contra aciertos reales por banda">${grid}${bars}${axis}</svg>
+    </div>`:""}
+
+    ${ligas?`<h3 class="sec-h" style="margin-top:28px">Por liga</h3>
+    <div class="scroller"><table class="t"><thead><tr><th>Liga</th><th class="num">Partidos</th><th class="num">Acierto</th></tr></thead><tbody>${ligas}</tbody></table></div>`:""}
+
+    ${cats?`<h3 class="sec-h" style="margin-top:28px">Qué tipo de factor está ayudando</h3>
+    <p class="lede">Cada factor apunta hacia un equipo. Esto mide qué tan seguido el equipo al que apuntó terminó ganando, comparado con el 50% que daría el azar. Los que salen en gris apuntan al equipo equivocado más de la mitad de las veces y conviene bajarles el peso. Solo se cuentan partidos sin empate.</p>
+    <div class="scroller"><table class="t"><thead><tr><th>Tipo de factor</th><th class="num">Veces contado</th><th class="num">Acierto sobre el azar</th></tr></thead><tbody>${cats}</tbody></table></div>`:""}
+
+    ${ult?`<h3 class="sec-h" style="margin-top:28px">Últimos pronósticos cerrados</h3>
+    <div class="scroller"><table class="t"><thead><tr><th>Partido</th><th>Dijo</th><th>Pasó</th><th class="num">Resultado</th></tr></thead><tbody>${ult}</tbody></table></div>`:""}
+  </section>
+  ${bloqueActualiza()}`;
+}
+
+function bloqueActualiza(){
+  return `<section class="band">
+    <h2 class="sec-h">Cómo se actualiza</h2>
+    <ul class="plain">
+      <li><b>Automático, una vez al día.</b> El programa consulta las fuentes gratuitas, trae los partidos de los próximos días de las nueve ligas y recalcula todo. Última corrida: ${esc(DATOS.generado)}.</li>
+      <li><b>El ojo reportero vive aparte</b>, en el archivo <code>ojo-reportero.json</code>. Ahí escribes lo que ninguna base de datos tiene. Se mezcla solo en la siguiente corrida, con tope del ${pct(DATOS.tope)}%.</li>
+      <li><b>Los resultados se cierran solos.</b> Al día siguiente el programa busca cómo terminaron los partidos que ya tenían pronóstico y actualiza la calificación.</li>
+      <li><b>Nada de esto cuesta.</b> Calendario, resultados y estadísticas salen del punto de acceso público de ESPN, que cubre las nueve ligas sin registro.</li>
+    </ul>
+  </section>`;
+}
+
+/* ---------------- buscador ---------------- */
+const norm=(s)=>s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+const input=document.getElementById("q"),box=document.getElementById("results"),clearBtn=document.getElementById("clear");
+let active=-1,shown=[];
+function match(term){
+  const t=norm(term.trim()); if(!t) return [];
+  return KEYS.map(k=>{
+    const x=T[k],hay=[x.n,x.s,x.l,x.c||"",...(x.a||[])].filter(Boolean).map(norm);
+    let sc=-1;
+    hay.forEach((h,i)=>{ if(h.startsWith(t)) sc=Math.max(sc,i===0?100:80-i); else if(h.includes(t)) sc=Math.max(sc,i===0?60:40-i); });
+    return {k,sc};
+  }).filter(o=>o.sc>=0).sort((a,b)=>b.sc-a.sc||T[a.k].n.localeCompare(T[b.k].n)).slice(0,9).map(o=>o.k);
+}
+function paint(){
+  box.innerHTML = !shown.length
+    ? `<div class="no">Sin resultados.</div>`
+    : shown.map((k,i)=>{
+        const x=T[k],fx=fixtureFor(k),riv=fx?T[fx.local===k?fx.visita:fx.local].s:"";
+        return `<button class="res" role="option" data-k="${esc(k)}" aria-selected="${i===active}">
+          <span class="abbr">${esc(x.s)}</span><span>${esc(x.n)}</span>
+          <span class="tag">${esc(x.l)}${riv?" · próximo vs "+esc(riv):" · sin partido"}</span></button>`;
+      }).join("");
+  box.hidden=false; input.setAttribute("aria-expanded","true");
+}
+function cerrar(){ box.hidden=true; active=-1; input.setAttribute("aria-expanded","false"); }
+function pick(k){ input.value=T[k].n; clearBtn.hidden=false; cerrar(); render(k); }
+input.addEventListener("input",()=>{
+  clearBtn.hidden=!input.value; shown=match(input.value); active=-1;
+  if(input.value.trim()) paint(); else cerrar();
+});
+input.addEventListener("keydown",(e)=>{
+  if(box.hidden) return;
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+    e.preventDefault();
+    active=(active+(e.key==="ArrowDown"?1:-1)+shown.length)%Math.max(shown.length,1);
+    paint(); box.children[active]?.scrollIntoView({block:"nearest"});
+  } else if(e.key==="Enter"){ e.preventDefault(); const k=shown[active>=0?active:0]; if(k) pick(k); }
+  else if(e.key==="Escape"){ cerrar(); }
+});
+box.addEventListener("click",(e)=>{ const b=e.target.closest(".res"); if(b) pick(b.dataset.k); });
+document.addEventListener("click",(e)=>{ if(!e.target.closest(".search")) cerrar(); });
+clearBtn.addEventListener("click",()=>{ input.value=""; clearBtn.hidden=true; cerrar(); input.focus(); });
+
+document.getElementById("chips").innerHTML=DATOS.atajos.map(a=>`<button class="chip" data-k="${esc(a[1])}">${esc(a[0])}</button>`).join("");
+document.getElementById("chips").addEventListener("click",(e)=>{ const b=e.target.closest(".chip"); if(b) pick(b.dataset.k); });
+
+renderRecord();
+if(DATOS.atajos.length) pick(DATOS.atajos[0][1]);
+window.scrollTo(0,0);
+</script>

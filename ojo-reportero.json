@@ -1,0 +1,30 @@
+[
+
+  {
+    "equipo": "Cruz Azul",
+    "titulo": "Referente del equipo con bajo rendimiento en entrenamientos por tema personal",
+    "detalle": "Tres semanas sin completar sesiones completas. En los dos últimos partidos bajó su participación en jugadas de gol.",
+    "efecto": "perjudica",
+    "fuerza": "algo",
+    "hasta": "2026-11-15"
+  },
+
+  {
+    "equipo": "Liverpool",
+    "titulo": "El portero titular volvió tocado de la fecha FIFA",
+    "detalle": "Salió al descanso con su selección por un cuadro gripal. El club no lo reporta como lesión.",
+    "efecto": "perjudica",
+    "fuerza": "poco",
+    "hasta": "2026-10-20"
+  },
+
+  {
+    "equipo": "Lakers",
+    "titulo": "Ambiente tenso entre un titular y el cuerpo técnico",
+    "detalle": "Dos reportes locales coincidentes mencionan una discusión en el entrenamiento del martes.",
+    "efecto": "perjudica",
+    "fuerza": "poco",
+    "hasta": "2026-10-30"
+  }
+
+]
