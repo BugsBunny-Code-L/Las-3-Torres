@@ -862,7 +862,31 @@ def escribir_html(equipos, pronosticos, historial):
     }
     with open(F_PLANTILLA, encoding="utf-8") as fh:
         plantilla = fh.read()
-    html = plantilla.replace("/*__DATOS__*/", json.dumps(datos, ensure_ascii=False, separators=(",", ":")))
+
+    bloque = json.dumps(datos, ensure_ascii=False, separators=(",", ":"))
+    # Caracteres que romperían el <script> si vinieran en un nombre de equipo
+    bloque = (bloque.replace("</", "<\\/")
+                    .replace(" ", "\\u2028")
+                    .replace(" ", "\\u2029"))
+
+    # El marcador en la plantilla es  const DATOS = /*__DATOS__*/ null;
+    # Hay que sustituir el comentario JUNTO CON el null, o queda "{...} null;"
+    # y el navegador no ejecuta nada de la página.
+    patron = re.compile(r"/\*__DATOS__\*/\s*null")
+    html, cuantos = patron.subn(lambda _m: bloque, plantilla, count=1)
+    if cuantos != 1:
+        html = plantilla.replace("/*__DATOS__*/", bloque)
+    if "/*__DATOS__*/" in html:
+        raise SystemExit("ERROR: la plantilla no tiene el marcador de datos esperado.")
+
+    # Red de seguridad: después de los datos solo puede venir el punto y coma.
+    # Si algo más se cuela, el navegador no ejecuta nada y la página sale en blanco.
+    inicio = html.index("const DATOS = ") + len("const DATOS = ")
+    _, fin = json.JSONDecoder().raw_decode(html, inicio)
+    resto = html[fin:fin + 10].lstrip()
+    if not resto.startswith(";"):
+        raise SystemExit(f"ERROR: quedó texto de más después de los datos: {resto[:20]!r}")
+
     with open(F_SALIDA, "w", encoding="utf-8") as fh:
         fh.write(html)
     return len(html)
